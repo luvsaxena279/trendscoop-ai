@@ -1,0 +1,1290 @@
+{
+  "name": "TrendScoop AI",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# TRENDSCOOP AI\n##MIRA BHAYANDAR Daily Digest\n**Version:** 2.5  \n**Owner:** Luv Saxena\n**Run Time:** Daily – 8:00 AM  ",
+        "height": 144,
+        "width": 320,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        816,
+        -864
+      ],
+      "id": "3688f125-6791-4dfe-b468-8cd77fb491b3",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -2016,
+        128
+      ],
+      "id": "920a82dd-7347-404f-89af-cecf9fbe3720",
+      "name": "00 Trigger: Daily Digest"
+    },
+    {
+      "parameters": {
+        "query": "={{ $json.Locale }} OR Mira Bhayandar OR \"Mira Road\" OR MBMC OR \"Mira-Bhayandar\" latest news OR updates OR traffic OR events",
+        "options": {
+          "topic": "general",
+          "max_results": 10,
+          "time_range": "week",
+          "include_domains": [
+            "timesofindia.indiatimes.com",
+            "mid-day.com",
+            "indianexpress.com",
+            "mumbaimirror.com",
+            "hindustantimes.com"
+          ]
+        }
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavily",
+      "typeVersion": 1,
+      "position": [
+        -1824,
+        128
+      ],
+      "id": "c327ec5e-291d-4fec-9ea5-faa2d7748c66",
+      "name": "01 Fetch: Local News (Tavily)",
+      "credentials": {
+        "tavilyApi": {
+          "id": "mwg0IMqbscVNxQdz",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "results",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -1648,
+        128
+      ],
+      "id": "03e07124-340b-485c-9261-6e81c1003590",
+      "name": "02 Split: Individual Articles"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "67fbf016-3253-485c-a1e5-c2cd1bc7af1c",
+              "leftValue": "={{$json.url}}",
+              "rightValue": "/topic/",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "c23111a8-0804-4ab5-87c2-3619611231f6",
+              "leftValue": "={{$json.url}}",
+              "rightValue": "/page-",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "00b27548-5eee-421b-9860-f0ae5f8f7f62",
+              "leftValue": "={{$json.url}}",
+              "rightValue": "/profile/",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "fe7e2f51-85de-4f15-a49b-5ef9607f3d15",
+              "leftValue": "={{$json.url}}",
+              "rightValue": "indianexpress.com",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1472,
+        128
+      ],
+      "id": "31943fc0-2a55-4f4a-8e83-779bdde8efbf",
+      "name": "03 Filter: Valid Article URLs"
+    },
+    {
+      "parameters": {
+        "url": "={{$json.url}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "en-US,en;q=0.9"
+            },
+            {
+              "name": "Referer",
+              "value": "https://www.google.com/"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1168,
+        112
+      ],
+      "id": "4c1914c1-d4b2-4e1e-9552-a6713c7c7abf",
+      "name": "04 Fetch: Full Article HTML"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -944,
+        -80
+      ],
+      "id": "063c8eb6-c31f-4525-969a-7b4d3b3acb7f",
+      "name": "05 Merge: URL + HTML"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "article_text",
+              "cssSelector": "p",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        -720,
+        128
+      ],
+      "id": "82d64d61-462b-406f-b22d-3113c636be5f",
+      "name": "06 Extract: Raw Paragraphs"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -528,
+        -64
+      ],
+      "id": "5b7b50be-a4bb-4a69-8da8-5bd61d95990b",
+      "name": "07 Merge: Article + Extracted Text"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ea8d297b-738b-4f06-9cb0-fd62aab466b4",
+              "name": "clean_article",
+              "value": "={{$json.article_text\n  .filter(p => p.length > 40)\n  .join(\"\\n\\n\")\n}}",
+              "type": "string"
+            },
+            {
+              "id": "b522c64d-dd30-4577-b742-6d71c81d01c8",
+              "name": "={{$json.url}}",
+              "value": "={{$json.url}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -352,
+        -64
+      ],
+      "id": "773a64e5-b203-43e1-a304-2b1ca589c8c6",
+      "name": "08 Transform: Clean Article Text"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "12FcUY1g2vv9pvHA7LtiT1tWmdQZdNw5h0-5ibriWByo",
+          "mode": "list",
+          "cachedResultName": "Subscribers",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12FcUY1g2vv9pvHA7LtiT1tWmdQZdNw5h0-5ibriWByo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1040716435,
+          "mode": "list",
+          "cachedResultName": "StoryLog",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12FcUY1g2vv9pvHA7LtiT1tWmdQZdNw5h0-5ibriWByo/edit#gid=1040716435"
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRangeA1",
+              "range": "A:B"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -144,
+        -240
+      ],
+      "id": "684057ee-a9d4-483b-8978-2ef92f6506b0",
+      "name": "09 Load: Sent URL Log",
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3C2AHmXWfs0LG2N1",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const sentItems = $items(\"09 Load: Sent URL Log\", 0, 0) || [];\n\nconst sentUrls = new Set(\n  sentItems\n    .map(item => item.json.URL)\n    .filter(Boolean)\n);\n\nreturn items.filter(item => {\n  const url = item.json.url;\n  return url && !sentUrls.has(url);\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        -64
+      ],
+      "id": "46859637-359f-4ce6-b455-26822b81e515",
+      "name": "10 Filter: Exclude Sent URLs"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9fdcd325-1afd-49b8-a071-e4dfada66bf5",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        256,
+        -64
+      ],
+      "id": "e84a2fd2-8ffd-4732-8e43-868a749a3470",
+      "name": "11 Gate: Articles Available?"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const text = (item.json.clean_article || \"\").toLowerCase()\n\n  let score = 0;\n\n  // Strong local relevance\n  if (text.includes(\"mira bhayandar\")) score += 5;\n  if (text.includes(\"bhayandar\")) score += 3;\n  if (text.includes(\"mira road\")) score += 3;\n  if (text.includes(\"mumbai\")) score += 1;\n\n  // Civic bodies\n  if (text.includes(\"mbmc\")) score += 4;\n  if (text.includes(\"bmc\")) score += 3;\n  if (text.includes(\"mmrda\")) score += 3;\n\n  // Infrastructure / public works\n  if (text.includes(\"road\") || text.includes(\"bridge\")) score += 2;\n  if (text.includes(\"metro\") || text.includes(\"rail\")) score += 2;\n  if (text.includes(\"water\") || text.includes(\"drain\")) score += 2;\n\n  // Financial or scale indicators\n  if (text.match(/₹|crore|lakh|km|%|\\d+/)) score += 2;\n\n  // Urgency indicators\n  if (text.includes(\"fire\") || text.includes(\"accident\")) score += 3;\n  if (text.includes(\"protest\") || text.includes(\"shutdown\")) score += 2;\n\n  // Penalize very short content\n  if (text.length < 500) score -= 2;\n\n  return {\n    json: {\n      ...item.json,\n      impact_score: score\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        -272
+      ],
+      "id": "f3f6bbbc-8c12-4e67-83a0-784a0bbbd5e6",
+      "name": "12 Score: Impact Ranking"
+    },
+    {
+      "parameters": {
+        "sortFieldsUi": {
+          "sortField": [
+            {
+              "fieldName": "impact_score",
+              "order": "descending"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [
+        704,
+        -272
+      ],
+      "id": "c71d7f6e-fb0a-4400-a7f9-4231cb6cf29b",
+      "name": "13 Sort: Highest Impact First"
+    },
+    {
+      "parameters": {
+        "maxItems": 3
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        896,
+        -272
+      ],
+      "id": "cbaa29fb-779d-4a30-a32f-5c742fd95a29",
+      "name": "14 Limit: Top Stories"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c68d8101-59bd-440e-ac29-439bd6793998",
+              "name": "url",
+              "value": "={{$json.url}}",
+              "type": "string"
+            },
+            {
+              "id": "acf48f92-ce23-43d9-951f-2ba734da47f6",
+              "name": "title",
+              "value": "={{$json.title}}",
+              "type": "string"
+            },
+            {
+              "id": "4bb0350d-5fdb-48e1-9da8-10fa8824d991",
+              "name": "content",
+              "value": "={{$json.content}}",
+              "type": "string"
+            },
+            {
+              "id": "0049c2a0-e49d-411e-a89a-c2f4716af186",
+              "name": "impact_score",
+              "value": "={{$json.impact_score}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1088,
+        -272
+      ],
+      "id": "92dc6586-8893-48c2-ad12-1d9f2e87b16e",
+      "name": "15 Clean: Strip Heavy Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Runs once for all incoming items\n\nconst structured = items.map((item, index) => {\n\n  const title = String(item.json.title || \"Untitled Story\");\n  const impact = Number(item.json.impact_score || 0).toFixed(3);\n\n  const text = String(item.json.content || \"\")\n    .replace(/\\s+/g, \" \")\n    .trim()\n    .substring(0, 1200); // Hard cap per story\n\n  return `\nStory ${index + 1}\nTitle: ${title}\nImpact Score: ${impact}\n\nContent:\n${text}\n`;\n}).join(\"\\n------------------------------\\n\");\n\nreturn [\n  {\n    json: {\n      story_bundle: structured\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        -272
+      ],
+      "id": "f949f029-7180-4302-b90d-aeec1a319e6d",
+      "name": "16 Aggregate: Build Article Bundle"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3230b3c8-5bd9-45f4-a923-3a5447c91df1",
+              "name": "prompt",
+              "value": "=`You are TrendScoop, an experienced local civic journalist.\nYou must ONLY use the information explicitly provided in the story inputs below.\nYou are NOT allowed to invent, assume, speculate, infer missing details, or introduce any facts not directly stated.\nIf something is unclear or incomplete, omit it.\nDo not generalize beyond the text.\n\nBelow are the structured story inputs:\n\n{{$json.story_bundle}}\n\nTASK:\nWrite ONE unified daily civic digest that synthesizes the key developments into a single professional briefing.\n\nSTRICT RULES:\n- Do not list stories separately.\n- Do not mention \"Story 1\", \"Impact Score\", or formatting labels.\n- Do not reference JSON.\n- Do not fabricate statistics, timelines, or officials.\n\nFORMAT EXACTLY AS:\nHeadline: <Clear professional headline summarizing the day>\n\nBriefing:\n4–6 concise paragraphs integrating the developments into a coherent local civic update.\n\nTone: Professional, factual, newsroom-style.`",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1488,
+        -272
+      ],
+      "id": "a16d8db5-3ba8-4b76-a97b-d1bc149b0bd4",
+      "name": "17 Compose: Daily Digest Prompt"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4dfcce33-f89f-4364-9e64-d15f334e4e82",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2144,
+        -288
+      ],
+      "id": "175d53de-eb39-4ff6-bb81-71d0001cfd61",
+      "name": "19 Gate: LLM Success?"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      choices: [\n        {\n          message: {\n            content: `\nHeadline: No Major Updates Today\n\nBriefing:\nThere were no significant new civic developments in the last 24 hours in Mira Bhayandar.\n\nWe’ll return tomorrow at 8AM with fresh local updates.\n            `\n          }\n        }\n      ]\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2224,
+        -48
+      ],
+      "id": "7a696ad4-1ee8-4a9b-813c-171f4b1f5c0b",
+      "name": "20 Fallback: No Stories Template"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = items[0].json.text || \"\";\n\n// Split headline and briefing safely\nlet headline = \"Today's Civic Briefing\";\nlet briefing = raw;\n\nif (raw.includes(\"Headline:\")) {\n  const parts = raw.split(\"Headline:\");\n  if (parts[1]) {\n    const headlineSplit = parts[1].split(\"\\n\");\n    headline = headlineSplit[0].trim();\n    briefing = raw.replace(`Headline: ${headline}`, \"\").trim();\n  }\n}\n\nconst name = items[0].json.Name || \"Subscriber\";\nconst locale = items[0].json.Locale || \"your area\";\n\nconst html = `\n<div style=\"font-family: Arial, sans-serif; max-width:600px; margin:auto;\">\n  <h1>TrendScoop AI</h1>\n  <p style=\"color:#444;\">\n    Hi ${name}, here is today's civic briefing for ${locale}.\n  </p>\n\n  <h2>${headline}</h2>\n\n  <div style=\"color:#444; line-height:1.6; font-size:15px;\">\n    ${briefing.replace(/\\n/g, \"<br><br>\")}\n  </div>\n\n  <p style=\"font-size:12px; color:#888; text-align:center; margin-top:40px;\">\n    You’re receiving this because you subscribed to TrendScoop AI.\n  </p>\n</div>\n`;\n\nreturn [{ json: { html } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2448,
+        -304
+      ],
+      "id": "042b108f-1483-403f-95e4-f8a780e557b8",
+      "name": "21 Format: Email Layout"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8e50a274-5f89-49e1-9447-74bd97d07532",
+              "name": "={{ $execution.id }}",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "6fce345f-90eb-4a03-8311-915352329558",
+              "name": "={{ new Date().toISOString() }}",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "ea10e9cd-01d4-46f9-ac02-2ec2e7801a60",
+              "name": "={{ $json.Locale || \"unknown\" }}",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "249c4927-0c2e-430f-9b24-18329155829a",
+              "name": "={{ $json.story_bundle ? $json.story_bundle.split(\"Story \").length - 1 : 0 }}",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "aac235fd-ec7a-4e6c-b24e-ee1e059371b0",
+              "name": "={{ $json.used_fallback || false }}",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "15b27e21-408c-40ce-87ce-48a578803f67",
+              "name": "={{ $json.headline || \"\" }}",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2640,
+        -432
+      ],
+      "id": "ed3b0f0e-ba8f-43e9-babd-263f0e460d6e",
+      "name": "22 Log: Run Metadata"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "12FcUY1g2vv9pvHA7LtiT1tWmdQZdNw5h0-5ibriWByo",
+          "mode": "list",
+          "cachedResultName": "Subscribers",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12FcUY1g2vv9pvHA7LtiT1tWmdQZdNw5h0-5ibriWByo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 235224034,
+          "mode": "list",
+          "cachedResultName": "DigestLogs",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12FcUY1g2vv9pvHA7LtiT1tWmdQZdNw5h0-5ibriWByo/edit#gid=235224034"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "execution_id": "={{ $json.execution_id }}",
+            "run_date": "={{ $json.run_date }}",
+            "locale": "={{ $json.locale }}",
+            "story_count": "={{ $json.story_count }}",
+            "used_fallback": "={{ $json.used_fallback }}",
+            "headline": "={{ $json.headline }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "run_date",
+              "displayName": "run_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "locale",
+              "displayName": "locale",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "story_count",
+              "displayName": "story_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "used_fallback",
+              "displayName": "used_fallback",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "headline",
+              "displayName": "headline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2832,
+        -432
+      ],
+      "id": "90cf5560-9ea4-4c22-9e9b-e32e84400ba2",
+      "name": "23 Store: Append Run Log",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3C2AHmXWfs0LG2N1",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "12FcUY1g2vv9pvHA7LtiT1tWmdQZdNw5h0-5ibriWByo",
+          "mode": "list",
+          "cachedResultName": "Subscribers",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12FcUY1g2vv9pvHA7LtiT1tWmdQZdNw5h0-5ibriWByo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Subscribers",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12FcUY1g2vv9pvHA7LtiT1tWmdQZdNw5h0-5ibriWByo/edit#gid=0"
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRangeA1",
+              "range": "A:C"
+            }
+          },
+          "outputFormatting": {
+            "values": {
+              "general": "UNFORMATTED_VALUE",
+              "date": "FORMATTED_STRING"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3040,
+        -432
+      ],
+      "id": "d7fb8e5b-c9cd-412e-b0f4-9ad961456e1b",
+      "name": "24 Load: Subscriber List",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3C2AHmXWfs0LG2N1",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "=TrendScoop AI: {{ $json.Name }}'s {{ $json.Locale }} Daily - {{$now.toISODate().split('T')[0]}}",
+        "message": "={{ $json.html}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3280,
+        -304
+      ],
+      "id": "1ff6c69e-7f84-41b0-8f21-7f0d126833a3",
+      "name": "25 Send: Daily Digest Email",
+      "webhookId": "221081c9-5f35-4b69-b9d5-0cc33b95297a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "vhfihlhqZ52L9zdt",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "12FcUY1g2vv9pvHA7LtiT1tWmdQZdNw5h0-5ibriWByo",
+          "mode": "list",
+          "cachedResultName": "Subscribers",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12FcUY1g2vv9pvHA7LtiT1tWmdQZdNw5h0-5ibriWByo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1040716435,
+          "mode": "list",
+          "cachedResultName": "StoryLog",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12FcUY1g2vv9pvHA7LtiT1tWmdQZdNw5h0-5ibriWByo/edit#gid=1040716435"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "URL": "={{$json.url}}",
+            "Date": "={{$now}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "URL",
+              "displayName": "URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3712,
+        -320
+      ],
+      "id": "d8b1ff72-9835-4f59-b109-bfdeb0e85bbe",
+      "name": "27 Update: Append Sent URL Log",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3C2AHmXWfs0LG2N1",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "558d2c7c-65d8-41e6-a342-03fe7ef2748d",
+              "leftValue": "={{$json.id}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3472,
+        -304
+      ],
+      "id": "682aaa97-c7e2-4e9f-8356-90091cef6cc3",
+      "name": "26 Gate: Email Sent?"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2880,
+        -112
+      ],
+      "id": "5c2b1f52-bf77-402f-8163-9b31c4f28027",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1712,
+        -208
+      ],
+      "id": "d213261b-a4e7-416a-8c71-98f54301208b",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "Lf1rxypIDyhsUR1r",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1712,
+        -416
+      ],
+      "id": "c4bb0e2d-b574-40f9-925c-7e5f1bc0e15b",
+      "name": "18 Basic LLM Chain"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "00 Trigger: Daily Digest": {
+      "main": [
+        [
+          {
+            "node": "01 Fetch: Local News (Tavily)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "01 Fetch: Local News (Tavily)": {
+      "main": [
+        [
+          {
+            "node": "02 Split: Individual Articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02 Split: Individual Articles": {
+      "main": [
+        [
+          {
+            "node": "03 Filter: Valid Article URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03 Filter: Valid Article URLs": {
+      "main": [
+        [
+          {
+            "node": "04 Fetch: Full Article HTML",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "05 Merge: URL + HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04 Fetch: Full Article HTML": {
+      "main": [
+        [
+          {
+            "node": "05 Merge: URL + HTML",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "05 Merge: URL + HTML": {
+      "main": [
+        [
+          {
+            "node": "06 Extract: Raw Paragraphs",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "07 Merge: Article + Extracted Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06 Extract: Raw Paragraphs": {
+      "main": [
+        [
+          {
+            "node": "07 Merge: Article + Extracted Text",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "07 Merge: Article + Extracted Text": {
+      "main": [
+        [
+          {
+            "node": "08 Transform: Clean Article Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "08 Transform: Clean Article Text": {
+      "main": [
+        [
+          {
+            "node": "09 Load: Sent URL Log",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "10 Filter: Exclude Sent URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "09 Load: Sent URL Log": {
+      "main": [
+        [
+          {
+            "node": "10 Filter: Exclude Sent URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10 Filter: Exclude Sent URLs": {
+      "main": [
+        [
+          {
+            "node": "11 Gate: Articles Available?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "11 Gate: Articles Available?": {
+      "main": [
+        [
+          {
+            "node": "12 Score: Impact Ranking",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "20 Fallback: No Stories Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "12 Score: Impact Ranking": {
+      "main": [
+        [
+          {
+            "node": "13 Sort: Highest Impact First",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "13 Sort: Highest Impact First": {
+      "main": [
+        [
+          {
+            "node": "14 Limit: Top Stories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "14 Limit: Top Stories": {
+      "main": [
+        [
+          {
+            "node": "15 Clean: Strip Heavy Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "15 Clean: Strip Heavy Fields": {
+      "main": [
+        [
+          {
+            "node": "16 Aggregate: Build Article Bundle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "16 Aggregate: Build Article Bundle": {
+      "main": [
+        [
+          {
+            "node": "17 Compose: Daily Digest Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "17 Compose: Daily Digest Prompt": {
+      "main": [
+        [
+          {
+            "node": "18 Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "19 Gate: LLM Success?": {
+      "main": [
+        [
+          {
+            "node": "21 Format: Email Layout",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "20 Fallback: No Stories Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "20 Fallback: No Stories Template": {
+      "main": [
+        [
+          {
+            "node": "21 Format: Email Layout",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "21 Format: Email Layout": {
+      "main": [
+        [
+          {
+            "node": "22 Log: Run Metadata",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "22 Log: Run Metadata": {
+      "main": [
+        [
+          {
+            "node": "23 Store: Append Run Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "23 Store: Append Run Log": {
+      "main": [
+        [
+          {
+            "node": "24 Load: Subscriber List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "24 Load: Subscriber List": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "25 Send: Daily Digest Email": {
+      "main": [
+        [
+          {
+            "node": "26 Gate: Email Sent?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "27 Update: Append Sent URL Log": {
+      "main": [
+        []
+      ]
+    },
+    "26 Gate: Email Sent?": {
+      "main": [
+        [
+          {
+            "node": "27 Update: Append Sent URL Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "25 Send: Daily Digest Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "18 Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "18 Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "19 Gate: LLM Success?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Kolkata",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "cae62011-cdb5-4c24-9c6c-1af95e5967a2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ba41275d42ea6cbb5d61b8c1df9f413dce72c05ae1343742d661f3cd161d8b47"
+  },
+  "id": "pM3Z2t8vAr3LrJhl",
+  "tags": []
+}
